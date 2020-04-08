@@ -1,0 +1,1 @@
+This is a small Spider Programm written in Typescript 
