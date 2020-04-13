@@ -1,41 +1,36 @@
-
 import superagent from 'superagent';
-import cheerio from 'cheerio';
+
+import fs from 'fs';
+import path from 'path';
+import Analyzer from './Analyzer'
+
+export interface IAnalyzer {
+  analyzer: (html: string, filePath: string) => string;
+}
 
 class Crowller {
-  private secret = 'x3b174jsx'
-  private url = `http://www.dell-lee.com/typescript/demo.html?secet=${this.secret}`
 
-  getInfo(html: string) {
-    const $ = cheerio.load(html)
-    const courseItems = $('.course-item');
-    const infos: string[] = [];
-    courseItems.map((index, element) => {
-      const descs = $(element).find('.course-desc')
-      const title = descs.eq(0).text()
-      infos.push(title);
-    });
-    const currentTime = {
-      time: (new Date()).getTime(),
-      data: infos
-    }
-    console.log(currentTime);
+  private filePath = path.resolve(__dirname, '../data/course.json');
+
+  constructor(private analyzer: IAnalyzer, private url: string) {
+    this.initSpiderProcess();
   }
 
-  async getRawHtml() {
+  private async getRawHtml() {
     const result = await superagent.get(this.url);
     return result.text;
   }
 
-  async initSpiderProcess() {
+  private writeFile(content: string) {
+    fs.writeFileSync(this.filePath, content);
+  }
+
+  private async initSpiderProcess() {
     const Html = await this.getRawHtml()
-    this.getInfo(Html);
+    const fileContent = this.analyzer.analyzer(Html, this.filePath)
+    this.writeFile(fileContent);
   }
 
-
-  constructor() {
-    this.initSpiderProcess()
-  }
 }
 
-const crowller = new Crowller()
+export default Crowller;
