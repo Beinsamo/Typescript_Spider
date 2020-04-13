@@ -1,16 +1,24 @@
-import { Router, Request, Response } from 'express';
-import Crowller from './crowller'
-import Analyzer from './Analyzer'
+import { Router, Request, Response, NextFunction } from 'express';
+import Crowller from './utils/crowller'
+import Analyzer from './utils/Analyzer'
 import fs from 'fs';
 import path from 'path'
-import request from 'superagent';
-
+import { getResponseData } from './utils/util'
 
 const router = Router()
 
-interface RequestWithBody extends Request {
+interface BodyRequest extends Request {
   body: {
     [key: string]: string | undefined;
+  }
+}
+
+const checkLogin = (req: Request, res: Response, next: NextFunction) => {
+  const isLogin = req.session ? req.session.login : false;
+  if (isLogin) {
+    next()
+  } else {
+    res.json(getResponseData(null, 'Login First'))
   }
 }
 
@@ -43,49 +51,42 @@ router.get('/logout', (req: Request, res: Response) => {
   if (req.session) {
     req.session.login = undefined;
   }
-  res.redirect('/')
+  res.json(getResponseData(true))
 })
 
-router.post('/login', (req: RequestWithBody, res: Response) => {
+router.post('/login', (req: BodyRequest, res: Response) => {
   const { password } = req.body
   const isLogin = req.session ? req.session.login : false;
   if (isLogin) {
-    res.send('already login')
+    res.json(getResponseData(false, 'already login'))
   } else {
     if (password === '123' && req.session) {
       if (req.session) {
         req.session.login = true;
-        res.send('login sucess')
-
+        res.json(getResponseData(true))
       }
     } else {
-      res.send('password error')
+      res.json(getResponseData(false, 'Login failed'))
     }
   }
 })
 
-router.get('/crowller', (req: RequestWithBody, res: Response) => {
-  const isLogin = req.session ? req.session.login : false;
-  if (isLogin) {
-    const secret = 'x3b174jsx'
-    const url = `http://www.dell-lee.com/typescript/demo.html?secet=${secret}`
-    const analyzer = Analyzer.getInstance();
-    new Crowller(analyzer, url);
-    res.send('getdata sucess' + `    <a href='/showdata'>show crowlled things!</a`);
-
-  } else {
-    res.send('first login')
-  }
+router.get('/crowller', checkLogin, (req: BodyRequest, res: Response) => {
+  const secret = 'x3b174jsx'
+  const url = `http://www.dell-lee.com/typescript/demo.html?secet=${secret}`
+  const analyzer = Analyzer.getInstance();
+  new Crowller(analyzer, url);
+  res.json(getResponseData(true))
 }
 )
 
-router.get('/showdata', (req: Request, res: Response) => {
+router.get('/showdata', checkLogin, (req: Request, res: Response) => {
   try {
-    const position = path.resolve(__dirname, '../data/course.json')
-    const result = fs.readFileSync(position, 'utf-8')
-    res.json(JSON.parse(result))
+    const position = path.resolve(__dirname, '../data/course.json');
+    const result = fs.readFileSync(position, 'utf-8');
+    res.json(getResponseData(JSON.parse(result)));
   } catch (e) {
-    res.send('nothing is crowlled')
+    res.json(getResponseData(false, 'data not exists'))
   }
 })
 

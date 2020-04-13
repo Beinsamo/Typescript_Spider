@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
 import router from './router'
-import body from 'body-parser'
 import bodyParser from 'body-parser';
 import cookieSession from 'cookie-session'
 

@@ -1,8 +1,7 @@
 import superagent from 'superagent';
-
 import fs from 'fs';
 import path from 'path';
-import Analyzer from './Analyzer'
+
 
 export interface IAnalyzer {
   analyzer: (html: string, filePath: string) => string;
@@ -10,7 +9,7 @@ export interface IAnalyzer {
 
 class Crowller {
 
-  private filePath = path.resolve(__dirname, '../data/course.json');
+  private filePath = path.resolve(__dirname, '../../data/course.json');
 
   constructor(private analyzer: IAnalyzer, private url: string) {
     this.initSpiderProcess();
